@@ -22,7 +22,7 @@
 
         FONT_ADDR       = $3800
         FONT_SIZE       = $0400
-        FONT_NAME       = "font3.prg"
+        FONT_NAME       = "font4.prg"
 
         zp = $10
 
@@ -72,6 +72,9 @@ init_skip
         sta $d01a
  
         cli
+
+        jsr test_window_render
+
         jmp *
 
 
@@ -364,7 +367,28 @@ data    .binclude "data.s"
 status  .binclude "status.s"
 view    .binclude "view.s"
 zoom    .binclude "zoom.s"
+ui      .binclude "ui.s"
 
+
+
+test_window_render
+        ldx #4
+        ldy #4
+        jsr ui.window_set_pos
+        ldx #30
+        ldy #5
+        jsr ui.window_set_size
+        jsr ui.window_render_frame
+
+        ldx #<window_test_title
+        ldy #>window_test_title
+        jsr ui.window_render_title
+        rts
+
+window_test_title
+        .enc "screen"
+        .text "hoe - hires overlay editor"
+        .byte 0
 
 ; Font
         * = FONT_ADDR

@@ -11,7 +11,7 @@ ASM_FLAGS = --ascii --case-sensitive --m6502 --vice-labels --labels $(LABELS) \
 TARGET = hoe.prg
 
 LABELS = labels.txt
-SOURCES = src/main.s src/data.s src/status.s src/view.s src/zoom.s
+SOURCES = src/main.s src/data.s src/status.s src/view.s src/zoom.s src/ui.s
 
 
 all: $(TARGET)
