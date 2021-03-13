@@ -383,12 +383,32 @@ test_window_render
         ldx #<window_test_title
         ldy #>window_test_title
         jsr ui.window_render_title
+
+        ldx #<window_test_text
+        ldy #>window_test_text
+        jsr ui.window_render_text
+
         rts
 
 window_test_title
         .enc "screen"
         .text "hoe - hires overlay editor"
         .byte 0
+
+
+window_test_text
+        .enc "screen"
+        .byte $8f
+        .text "hello "
+        .byte $87
+        .text "world! "
+        .byte $8f
+        .text "- this line should wrap around. carriage"
+        .byte $90
+        .text "return."
+        .byte $81
+        .text "yay!"
+        .byte $ff
 
 ; Font
         * = FONT_ADDR

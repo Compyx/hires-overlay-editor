@@ -23,4 +23,4 @@ $(TARGET): $(SOURCES) $(DATA)
 .PHONY: clean
 clean:
 	rm -f $(TARGET)
-
+	rm -f $(LABELS)

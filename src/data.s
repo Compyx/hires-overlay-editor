@@ -16,12 +16,12 @@ pixelspritexmsb .byte 0
 pixelspriteypos .byte $79 + 8
 
 ; UI data
-window_xpos     .byte 0
-window_ypos     .byte 0
-window_width    .byte 0
-window_width2   .byte 0
-window_height   .byte 0
-window_framecol .byte $e
+window_xpos     .byte 0         ; window xpos in the zoom area
+window_ypos     .byte 0         ; window ypos in the zoom area
+window_width    .byte 0         ; window width, excluding the frame
+window_width2   .byte 0         ; window_width + 1, helps with code
+window_height   .byte 0         ; window height, excluding the frame
+window_framecol .byte $e        ; color of the window frame
 
 
 statusbar_text

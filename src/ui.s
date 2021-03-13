@@ -3,10 +3,14 @@
 ;   font = $3800-$3bff
 ;
 
+
 ; Get vidram/colram pointers for \a X and \a Y
 ;
 ; @clobbers     all
-; @return       X ay
+; @return       A       LSB
+; @return       X       vidram MSB
+; @return       Y       colram MSB
+;
 screenpos_get .proc
         stx xadd + 1
         lda data.screen_row_lsb + 9,y
@@ -30,6 +34,11 @@ colres  ldy #0
         rts
 
 
+; @brief        Set window X,Y position
+;
+; @param        X       x-position
+; @param        Y       y-position
+;
 window_set_pos .proc
         stx data.window_xpos
         sty data.window_ypos
@@ -37,6 +46,11 @@ window_set_pos .proc
 .pend
 
 
+; @brief        Set window size, excluding frame
+;
+; @param        X       width
+; @param        Y       height
+;
 window_set_size .proc
         stx data.window_width
         sty data.window_height
@@ -47,6 +61,11 @@ window_set_size .proc
 .pend
 
 
+; @brief        Render window frame
+;
+; @zeropage     zp+0 .. zp+3
+; @clobbers     all
+;
 window_render_frame .proc
 
         vidram = zp
@@ -142,6 +161,12 @@ more_rows
 .pend
 
 
+; @brief        Render window title
+;
+; Title must be a 0-terminated screencode string.
+;
+; @param        X       title LSB
+; @param        Y       title MSB
 window_render_title .proc
 
         vidram = zp
@@ -189,3 +214,86 @@ window_render_title .proc
 .pend
 
 
+; @brief        Render text in window
+;
+; @param        X       text LSB
+; @param        Y       text MSB
+;
+; @zeropage     zp+0 .. zp+7
+;
+window_render_text .proc
+
+        vidram = zp
+        colram = zp + 2
+        source = zp + 4
+        column = zp + 6
+        color  = zp + 7
+
+        stx source + 0
+        sty source + 1
+
+        ldx data.window_xpos
+        ldy data.window_ypos
+        inx
+        iny
+        jsr screenpos_get
+        sta vidram + 0
+        sta colram + 0
+        stx vidram + 1
+        sty colram + 1
+
+more_rows
+        ldy #0
+        sty column
+more
+        ldy #0
+        lda (source),y
+        cmp #$ff
+        bne +
+        rts     ; EOT
++
+        bpl +
+        ; get color
+        cmp #$90
+        bcs +
+        and #$0f
+        sta color
+        jmp next_char
++
+        cmp #$90
+        bne +
+        ; CR
+
+        lda data.window_width
+        sta column
+        jmp next_char
+
++
+        ldy column
+        sta (vidram),y
+        lda color
+        sta (colram),y
+
+        inc column
+
+next_char
+        inc source
+        bne +
+        inc source + 1
++
+        lda column
+        cmp data.window_width
+        bcc more
+more_cr
+        lda vidram
+        clc
+        adc #40
+        sta vidram
+        sta colram
+        bcc +
+        inc vidram + 1
+        inc colram + 1
++
+        jmp more_rows
+        rts
+.pend
