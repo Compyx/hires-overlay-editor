@@ -3,7 +3,13 @@
 
 ; $4000-$5f3f   work bitmap
 ; $6000-$63e7   work vidram
-;
+
+
+;------------------------------------------------------------------------------
+; Global constants
+;------------------------------------------------------------------------------
+
+        zp = $10
 
         VIEW_BITMAP     = $4000
         VIEW_ROWS       = 8
@@ -24,7 +30,27 @@
         FONT_SIZE       = $0400
         FONT_NAME       = "font4.prg"
 
-        zp = $10
+
+        RASTER_UBORDER  = $00
+        RASTER_VIEW1    = $2e
+        RASTER_VIEW2    = $33 + 20
+        RASTER_VIEW3    = $33 + 20 + 21
+        RASTER_STATUS   = $72
+        RASTER_LBORDER  = $f9
+
+
+
+; Macros
+
+load_d018 .macro
+        lda #(((\1 >> 10)) | (((\2 >> 8) & $3f) >> 2)
+.endm
+
+
+
+;------------------------------------------------------------------------------
+; BASIC SYS line
+;------------------------------------------------------------------------------
 
         * = $0801
 
@@ -32,6 +58,12 @@
         .null $9e, format("%d", main)
 +       .word(0)
 
+
+; Main entry point
+;
+; @clobbers     all
+; @noreturn
+;
 main
         lda #6
         sta $d020
@@ -42,21 +74,23 @@ main
         lda data.init_done
         bne init_skip
         jsr init
-init_skip
         lda #1
         sta data.init_done
-
+init_skip
+        ; set ghostbytes of VIC banks 3 & 2 to make sure we don't forget to
+        ; initialize those:
         lda #$55
         sta $3fff
         lda #$aa
         sta $7fff
 
+        ; set up IRQ handler
         sei
         lda #$7f
         sta $dc0d
         sta $dd0d
 
-        lda #$f9
+        lda #RASTER_LBORDER
         sta $d012
         lda #<lborder_irq
         ldx #>lborder_irq
@@ -70,17 +104,17 @@ init_skip
         bit $dd0d
         lda #$01
         sta $d01a
- 
         cli
 
         jsr test_window_render
 
-        jmp *
+        jmp *   ; TODO: Event handler loop
 
 
+; Cold start initialization
 init .proc
 
-
+        ; use BASIC ROM to store some garbage data in the sprite layer
         ldx #0
 -
 .for k = 0, k < 6, k += 1
@@ -89,6 +123,8 @@ init .proc
 .next
         inx
         bne -
+
+        ; use KERNAL ROM to store some garbage data in the bitmap
 -
 .for k = 0, k < 10, k += 1
         lda $e000 + k * 256,x
@@ -96,6 +132,8 @@ init .proc
 .next
         inx
         bne -
+
+        ; Use KERNAL ROM to store some garbage data in the vidram
 
 -       lda $f000,x
         sta $5000,x
@@ -107,6 +145,7 @@ init .proc
         dex
         bpl -
 
+        ; initialize modules
         jsr view.init
         jsr status.init
         jsr zoom.init
@@ -114,7 +153,7 @@ init .proc
 .pend
 
 
-
+; IRQ handler for the lower border opening code
 lborder_irq
         dec $d020
         lda #$13
@@ -128,14 +167,18 @@ lborder_irq
 
         lda #<uborder_irq
         ldx #>uborder_irq
-        ldy #$0
-do_irq
+        ldy #RASTER_UBORDER
         sta $0314
         stx $0315
         sty $d012
         inc $d019
-        jmp $ea81
+        jmp $ea7b
 
+; IRQ handler for the upper border code
+;
+; Disable any sprite display to avoid any sprites rendered in the lower border
+; being mirrored in the upper border
+;
 uborder_irq
         dec $d020
         lda #0
@@ -145,10 +188,16 @@ uborder_irq
 
         lda #<view_irq1
         ldx #>view_irq1
-        ldy #$2e
-        jmp do_irq
+        ldy #RASTER_VIEW1
+do_irq
+        sta $0314
+        stx $0315
+        sty $d012
+        inc $d019
+        jmp $ea81
 
 
+; IRQ handler to set up the view and its first sprite row
 view_irq1
         dec $d020
         lda #$ff
@@ -165,6 +214,8 @@ view_irq1
         lda #$3b
         sta $d011
         lda #$40
+;        #load_d018 VIEW_VIDRAM, VIEW_BITMAP
+        sta $0400
         sta $d018
         lda #$02
         sta $dd00
@@ -173,10 +224,11 @@ view_irq1
 
         lda #<view_irq2
         ldx #>view_irq2
-        ldy #$33 + 20
+        ldy #RASTER_VIEW2
         jmp do_irq
 
 
+; IRQ handler to set up the second view row
 view_irq2
         inc $d020
         jsr set_sprite_layer_ypos2
@@ -184,10 +236,11 @@ view_irq2
 
         lda #<view_irq3
         ldx #>view_irq3
-        ldy #$33 + 20 + 21
+        ldy #RASTER_VIEW3
         jmp do_irq
 
 
+; IRQ handler to set up the third view row
 view_irq3
         inc $d020
         jsr set_sprite_layer_ypos3
@@ -195,10 +248,12 @@ view_irq3
 
         lda #<status_irq
         ldx #>status_irq
-        ldy #$72
+        ldy #RASTER_STATUS
         jmp do_irq
 
 
+; IRQ handler to set up the status bar between the view and the zoom
+;
 status_irq
         dec $d020
         lda #$1b
@@ -207,15 +262,17 @@ status_irq
         sta $d018
         lda #$03
         sta $dd00
-
         jsr set_zoom_sprites
         inc $d020
 
         lda #<lborder_irq
         ldx #>lborder_irq
-        ldy #$f9
+        ldy #RASTER_LBORDER
         jmp do_irq
 
+
+; Set x positions of the view's sprite layer
+;
 set_sprite_layer_xpos .proc
         lda #$58
         sta $d000
