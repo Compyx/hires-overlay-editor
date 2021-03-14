@@ -3,6 +3,12 @@
 ; Status display
 
 
+; @brief        Initialize statusbar
+;
+; Renders the initial statusbar text and its colors
+;
+; @clobbers     A X
+;
 init .proc
         ldx #39
 -       lda data.statusbar_text,x

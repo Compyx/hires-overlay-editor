@@ -1,37 +1,32 @@
 ; vim: set et ts=8 sw=8 sts=8 fdm=marker syntax=64tass smartindent:
 ;
-;   font = $3800-$3bff
+;       font    = $3800-$3bff
+;       vidram  = $0400-$07e7
 ;
 
 
 ; Get vidram/colram pointers for \a X and \a Y
 ;
 ; @clobbers     all
+; @stack        1
 ; @return       A       LSB
 ; @return       X       vidram MSB
 ; @return       Y       colram MSB
 ;
 screenpos_get .proc
-        stx xadd + 1
-        lda data.screen_row_lsb + 9,y
+        txa
         clc
-xadd    adc #0
-        sta lsbres + 1
+        adc data.screen_row_lsb + 9,y
+        pha
         lda data.screen_row_msb + 9,y
-        adc #$04
-        sta msbres + 1
+        adc #$04        ; screen at $0400
+        tax
         and #3
         ora #$d8
-        sta colres + 1
-
-lsbres  lda #0
-msbres  ldx #0
-colres  ldy #0
+        tay
+        pla
         rts
 .pend
-
-
-        rts
 
 
 ; @brief        Set window X,Y position

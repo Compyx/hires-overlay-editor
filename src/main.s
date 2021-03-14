@@ -1,8 +1,9 @@
 ; vim: set et ts=8 sw=8 sts=8 fdm=marker syntax=64tass smartindent:
 ;
 
-; $4000-$5f3f   work bitmap
-; $6000-$63e7   work vidram
+; $4000-$49ff   image bitmap
+; $4a00-$4fff   image sprites
+; $5000-$513f   image vidram
 
 
 ;------------------------------------------------------------------------------
@@ -40,11 +41,16 @@
 
 
 
-; Macros
+; Functions
 
-load_d018 .macro
-        lda #(((\1 >> 10)) | (((\2 >> 8) & $3f) >> 2)
-.endm
+; @brief        Calculate $d018 value for \a vram and \a bmp
+; @param        vram    videoram location
+; @param        bmp     bitmap location
+;
+; @return       d018 value
+;
+d018calc .sfunction vram, bmp, ((vram >> 6) & $f0) | ((bmp >> 10) & $f) | ((vram ^ bmp) & ~$3fff)
+
 
 
 
@@ -213,8 +219,7 @@ view_irq1
 
         lda #$3b
         sta $d011
-        lda #$40
-;        #load_d018 VIEW_VIDRAM, VIEW_BITMAP
+        lda #d018calc(VIEW_VIDRAM, VIEW_BITMAP)
         sta $0400
         sta $d018
         lda #$02
@@ -296,6 +301,8 @@ set_sprite_layer_xpos .proc
 .pend
 
 
+; @brief        Set sprite colors for sprite overlay
+;
 set_sprites_color .proc
         lda data.overlaycolor
         sta $d027
@@ -310,6 +317,8 @@ set_sprites_color .proc
 .pend
 
 
+; @brief        Set sprite y-positions and pointers for the first sprite row
+;
 set_sprite_layer_ypos1 .proc
         lda #$33
         sta $d001
@@ -338,6 +347,8 @@ set_sprite_layer_ypos1 .proc
 .pend
 
 
+; @brief        Set sprite y-positions and pointers for the second sprite row
+;
 set_sprite_layer_ypos2 .proc
         lda #$33 + 21
         sta $d001
@@ -366,6 +377,8 @@ set_sprite_layer_ypos2 .proc
 .pend
 
 
+; @brief        Set sprite y-positions and pointers for the second sprite row
+;
 set_sprite_layer_ypos3 .proc
         lda #$33 + 21 + 21
         sta $d001
@@ -418,16 +431,23 @@ set_zoom_sprites .proc
 .pend
 
 
+;------------------------------------------------------------------------------
 ; Namespaces
-;
+;------------------------------------------------------------------------------
+
+; Shared data
 data    .binclude "data.s"
+; Status bar code
 status  .binclude "status.s"
+; View code
 view    .binclude "view.s"
+; Zoom code
 zoom    .binclude "zoom.s"
+; UI code
 ui      .binclude "ui.s"
 
 
-
+; @brief        Quick test of the UI window rendering
 test_window_render
         ldx #4
         ldy #4
@@ -447,12 +467,15 @@ test_window_render
 
         rts
 
+
+; @brief        UI window test, title
 window_test_title
         .enc "screen"
         .text "hoe - hires overlay editor"
         .byte 0
 
 
+; @brief        UI window test, text
 window_test_text
         .enc "screen"
         .byte $8f
@@ -467,7 +490,14 @@ window_test_text
         .text "yay!"
         .byte $ff
 
+
+
+;------------------------------------------------------------------------------
+; Load external data such as sprites, font etc.
+;------------------------------------------------------------------------------
+
 ; Font
         * = FONT_ADDR
 
 .binary format("../data/%s", FONT_NAME), 2, FONT_SIZE
+
