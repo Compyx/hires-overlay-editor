@@ -2,16 +2,24 @@
 #
 # Makefile for the hires overlay editor
 
-
+# Assembler binary
 ASM = 64tass
+# Assembler flags
 ASM_FLAGS = --ascii --case-sensitive --m6502 --vice-labels --labels $(LABELS) \
 	    -Wall -Wshadow -Wstrict-bool -I src
 
 
+# Target, raw .prg
 TARGET = hoe.prg
 
+ # VICE labels file
 LABELS = labels.txt
-SOURCES = src/main.s src/data.s src/status.s src/view.s src/zoom.s src/ui.s
+
+# Source files
+SOURCES = src/main.s \
+	  src/data.s src/status.s src/view.s src/zoom.s src/ui.s src/uidata.s
+# External data files
+DATA = data/font4.prg
 
 
 all: $(TARGET)

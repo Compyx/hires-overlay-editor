@@ -4,6 +4,32 @@
 ;       vidram  = $0400-$07e7
 ;
 
+; Special codes for the text rendering
+;
+        CRLF    = $90   ; Carriage return + line feed
+
+        BLACK   = $80   ; black
+        WHITE   = $81   ; white
+        RED     = $82   ; red
+        CYAN    = $83   ; cyan
+        PURPLE  = $84   ; purple
+        GREEN   = $85   ; green
+        BLUE    = $86   ; blue
+        YELLOW  = $87   ; yellow
+        ORANGE  = $88   ; orange/light brown
+        BROWN   = $89   ; brown
+        LTRED   = $8a   ; light red
+        DKGREY  = $8b   ; dark grey
+        GREY    = $8c   ; medium grey
+        LTGREEN = $8d   ; light green
+        LTBLUE  = $8e   ; light blue
+        LTGREY  = $8f   ; light grey
+
+        ; Dialog types
+        TYPE_TEXT       = $00   ; render window and exit
+        TYPE_INFO       = $01   ; render window and wait for key press
+        TYPE_CONFIRM    = $02   ; render window and wait for 'y'
+
 
 ; Get vidram/colram pointers for \a X and \a Y
 ;
@@ -51,7 +77,6 @@ window_set_size .proc
         sty data.window_height
         inx
         stx data.window_width2
-        dex
         rts
 .pend
 
@@ -291,4 +316,86 @@ more_cr
 +
         jmp more_rows
         rts
+.pend
+
+
+; @brief        Show dialog
+;
+; @param A      dialog index
+; @param X      dialog x-pos
+; @param Y      dialog y-pos
+;
+; @return       variable
+;
+dialog_show .proc
+
+        dialog = zp
+
+        sta data.dialog_index
+        stx data.dialog_xpos
+        sty data.dialog_ypos
+        asl a
+        tax
+        lda uidata.dialog_ptrs + 0,x
+        sta dialog + 0
+        sta data.dialog_extra + 0
+        lda uidata.dialog_ptrs + 1,x
+        sta dialog + 1
+        sta data.dialog_extra + 1
+
+        ldy #0
+        lda (dialog),y
+        sta data.dialog_type
+        iny
+        lda (dialog),y
+        sta data.dialog_width
+        iny
+        lda (dialog),y
+        sta data.dialog_height
+        iny
+        lda (dialog),y
+        sta data.dialog_title + 0
+        iny
+        lda (dialog),y
+        sta data.dialog_title + 1
+        iny
+        lda (dialog),y
+        sta data.dialog_text + 0
+        iny
+        lda (dialog),y
+        sta data.dialog_text + 1
+
+        iny
+        tya
+        clc
+        adc dialog + 0
+        sta data.dialog_extra + 0
+        lda dialog + 1
+        adc #0
+        sta data.dialog_extra + 1
+
+        ; render frame
+        ldx data.dialog_xpos
+        ldy data.dialog_ypos
+        jsr ui.window_set_pos
+        ldx data.dialog_width
+        ldy data.dialog_height
+        jsr ui.window_set_size
+        jsr ui.window_render_frame
+
+        ; render title
+        ldx data.dialog_title + 0
+        ldy data.dialog_title + 1
+        beq +
+        jsr ui.window_render_title
++
+        ; render text
+        ldx data.dialog_text + 0
+        ldy data.dialog_text + 1
+        beq +
+        jsr ui.window_render_text
++
+        ; TODO: dialog handler by type
+        rts
+
 .pend

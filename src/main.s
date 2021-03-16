@@ -445,50 +445,33 @@ view    .binclude "view.s"
 zoom    .binclude "zoom.s"
 ; UI code
 ui      .binclude "ui.s"
+; UI data
+uidata  .binclude "uidata.s"
 
 
 ; @brief        Quick test of the UI window rendering
 test_window_render
+        lda #0
         ldx #4
         ldy #4
-        jsr ui.window_set_pos
-        ldx #30
-        ldy #5
-        jsr ui.window_set_size
-        jsr ui.window_render_frame
+        jsr ui.dialog_show
 
-        ldx #<window_test_title
-        ldy #>window_test_title
-        jsr ui.window_render_title
-
-        ldx #<window_test_text
-        ldy #>window_test_text
-        jsr ui.window_render_text
+;        jsr ui.window_set_pos
+;        ldx #30
+;        ldy #5
+;        jsr ui.window_set_size
+;        jsr ui.window_render_frame
+;
+;        ldx #<window_test_title
+;        ldy #>window_test_title
+;        jsr ui.window_render_title
+;
+;        ldx #<window_test_text
+;        ldy #>window_test_text
+;        jsr ui.window_render_text
 
         rts
 
-
-; @brief        UI window test, title
-window_test_title
-        .enc "screen"
-        .text "hoe - hires overlay editor"
-        .byte 0
-
-
-; @brief        UI window test, text
-window_test_text
-        .enc "screen"
-        .byte $8f
-        .text "hello "
-        .byte $87
-        .text "world! "
-        .byte $8f
-        .text "- this line should wrap around. carriage"
-        .byte $90
-        .text "return."
-        .byte $81
-        .text "yay!"
-        .byte $ff
 
 
 
