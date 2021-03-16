@@ -127,3 +127,14 @@ init .proc
         jsr create_sprites
         rts
 .pend
+
+
+render_char .proc
+        rts
+.pend
+
+
+
+render_full .proc
+        rts
+.pend

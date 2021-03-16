@@ -86,3 +86,34 @@ screen_row_msb
         .byte >(row * 40)
 .next
 
+; @brief        Calculate sprite xpos for row 0
+;
+; Generates 00, 01, 02, 40, 41, 42, 80, 81, 82, c0, c1, c2, 100, 101, 102 etc.
+;
+fn_sprite_xoffset .sfunction _xpos, (((_xpos / 3) << 6) + _xpos % 3)
+
+
+fn_sprite_yoffset .sfunction _ypos, ((_ypos / 21 * $200)
+
+
+sprite_char_xlsb
+.for col = 0, col < 24, col += 1
+        .byte <fn_sprite_xoffset(col)
+.next
+
+sprite_char_xmsb
+.for col = 0, col < 24, col += 1
+        .byte >fn_sprite_xoffset(col)
+.next
+
+
+sprite_char_ylsb
+.for row = 0, col < 63, row += 1
+        .byte <fn_sprite_yoffset(row)
+.next
+
+sprite_char_ymsb
+.for row = 0, row < 63, row += 1
+        .byte >fn_sprite_yoffset(tow)
+.next
+

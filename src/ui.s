@@ -313,7 +313,6 @@ more_cr
         inc colram + 1
 +
         jmp more_rows
-        rts
 .pend
 
 
