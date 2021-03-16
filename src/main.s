@@ -411,8 +411,12 @@ set_sprite_layer_ypos3 .proc
 ; @brief        Set zoom sprites
 ;
 set_zoom_sprites .proc
+        lda #$00
+        ldx data.dialog_active
+        bne +
         lda #$01
-        sta $d015
++       sta $d015
+
         lda #0
         sta $d010
 

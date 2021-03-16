@@ -22,7 +22,7 @@ dialog_ptrs
 
 welcome_dlg
         .byte ui.TYPE_INFO
-        .byte 20, 6
+        .byte 30, 6
         .word welcome_title
         .word welcome_text
 

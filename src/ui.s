@@ -252,10 +252,8 @@ window_render_text .proc
         stx source + 0
         sty source + 1
 
-        ldx data.window_xpos
-        ldy data.window_ypos
-        inx
-        iny
+        ldx data.window_text_xpos
+        ldy data.window_text_ypos
         jsr screenpos_get
         sta vidram + 0
         sta colram + 0
@@ -374,6 +372,9 @@ dialog_show .proc
         adc #0
         sta data.dialog_extra + 1
 
+        lda #1
+        sta data.dialog_active
+
         ; render frame
         ldx data.dialog_xpos
         ldy data.dialog_ypos
@@ -390,12 +391,63 @@ dialog_show .proc
         jsr ui.window_render_title
 +
         ; render text
+        ldx data.window_xpos
+        ldy data.window_ypos
+        inx
+        iny
+        stx data.window_text_xpos
+        sty data.window_text_ypos
         ldx data.dialog_text + 0
         ldy data.dialog_text + 1
         beq +
         jsr ui.window_render_text
 +
         ; TODO: dialog handler by type
-        rts
+        lda data.dialog_type
+        asl a
+        tax
+        lda handler_ptrs + 0,x
+        sta _exec + 1
+        lda handler_ptrs + 1,x
+        sta _exec + 2
+_exec   jmp $fce2
 
 .pend
+
+
+handler_ptrs
+        .word 0
+        .word handler_anykey
+
+
+anykey_text
+        .enc "screen"
+        .byte ui.LTGREY
+        .text "press the "
+        .byte ui.WHITE
+        .text "any key "
+        .byte ui.LTGREY
+        .text "to continue"
+        .byte $ff
+
+
+handler_anykey
+        ; render 'press any key'
+
+        ldx data.window_xpos
+        inx
+        lda data.window_ypos
+        clc
+        adc data.window_height
+        stx data.window_text_xpos
+        sta data.window_text_ypos
+        ldx #<anykey_text
+        ldy #>anykey_text
+        jsr window_render_text
+
+-       jsr $ffe4
+        beq -
+        lda #0
+        sta data.dialog_active
+        rts
+

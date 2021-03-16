@@ -24,6 +24,10 @@ window_width    .byte 0         ; window width, excluding the frame
 window_width2   .byte 0         ; window_width + 1, helps with code
 window_height   .byte 0         ; window height, excluding the frame
 window_framecol .byte $e        ; color of the window frame
+window_text_xpos        .byte 0
+window_text_ypos        .byte 0
+
+dialog_active   .byte 0
 
 dialog_index    .byte 0
 dialog_xpos     .byte 0
