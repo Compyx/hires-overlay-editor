@@ -129,12 +129,48 @@ init .proc
 .pend
 
 
+
+sprite_get_ptr .proc
+        ptr = zp_tmp
+
+        lda data.sprite_char_xlsb,x
+        clc
+        adc data.sprite_char_ylsb,y
+        pha
+        lda data.sprite_char_xmsb,x
+        adc data.sprite_char_ymsb,y
+        tay
+        pla
+        tax
+        rts
+.pend
+
+
+; @brief        Render a single zoomed char
+;
+; @param A      bit 0-3: target column, 4: target row
+; @param X      x-pos in data
+; @param Y      y-pos in data
+;
 render_char .proc
+        pha
+        and #$0f
+        sta data.zoom_xchar
+        pla
+        lsr a
+        lsr a
+        lsr a
+        lsr a
+        sta data.zoom_ychar
+
         rts
 .pend
 
 
 
 render_full .proc
+
+        lda #$00
+        jsr render_char
         rts
 .pend

@@ -41,6 +41,12 @@ dialog_text     .word 0
 ; extra data (optional)
 dialog_extra     .word 0
 
+
+; zoom data
+zoom_xchar      .byte 0
+zoom_ychar      .byte 0
+
+
 ; Status data
 
 ; statusbar text
@@ -76,44 +82,40 @@ pixel_sprite_data_end
 
 ; screen row LSB table
 screen_row_lsb
-.for row = 0, row < 25, row += 1
-        .byte <(row * 40)
-.next
+        .byte <(range(25) * 40)
 
 ; screen row MSB table
 screen_row_msb
-.for row = 0, row < 25, row += 1
-        .byte >(row * 40)
-.next
+        .byte >(range(25) * 40)
 
-; @brief        Calculate sprite xpos for row 0
+
+; @brief        Calculate sprite layer column offset
 ;
 ; Generates 00, 01, 02, 40, 41, 42, 80, 81, 82, c0, c1, c2, 100, 101, 102 etc.
 ;
 fn_sprite_xoffset .sfunction _xpos, (((_xpos / 3) << 6) + _xpos % 3)
 
 
-fn_sprite_yoffset .sfunction _ypos, ((_ypos / 21 * $200)
+; @brief        Calculate sprite layer row offset
+;
+; Generates 00, 03, 06 .. 3c, 200, 203, 206 .. 23c, 400, 403, 406 .. 43c
+;
+fn_sprite_yoffset .sfunction _ypos, ((_ypos / 21) * $200) + ((_ypos % 21) * 3)
 
 
+; sprite layer column LSB
 sprite_char_xlsb
-.for col = 0, col < 24, col += 1
-        .byte <fn_sprite_xoffset(col)
-.next
+        .byte <fn_sprite_xoffset(range(24))
 
+; sprite data column MSB
 sprite_char_xmsb
-.for col = 0, col < 24, col += 1
-        .byte >fn_sprite_xoffset(col)
-.next
+        .byte >fn_sprite_xoffset(range(24))
 
-
+; sprite data row LSB
 sprite_char_ylsb
-.for row = 0, col < 63, row += 1
-        .byte <fn_sprite_yoffset(row)
-.next
+        .byte <fn_sprite_yoffset(range(63))
 
+; sprite data row MSB
 sprite_char_ymsb
-.for row = 0, row < 63, row += 1
-        .byte >fn_sprite_yoffset(tow)
-.next
+        .byte >fn_sprite_yoffset(range(63))
 

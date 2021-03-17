@@ -30,6 +30,8 @@
         TYPE_INFO       = $01   ; render window and wait for key press
         TYPE_CONFIRM    = $02   ; render window and wait for 'y'
 
+        RENDER_ZOOM     = $80   ; render zoom after dialog
+
 
 ; Get vidram/colram pointers for \a X and \a Y
 ;
@@ -409,8 +411,13 @@ dialog_show .proc
         sta _exec + 1
         lda handler_ptrs + 1,x
         sta _exec + 2
-_exec   jmp $fce2
-
+_exec   jsr $fce2
+        lda data.dialog_type
+        and #ui.RENDER_ZOOM
+        beq +
+        jsr zoom.render_full
++
+        rts
 .pend
 
 
