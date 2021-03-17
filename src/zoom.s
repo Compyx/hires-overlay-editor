@@ -131,20 +131,38 @@ init .proc
 
 
 sprite_get_ptr .proc
-        ptr = zp_tmp
-
         lda data.sprite_char_xlsb,x
         clc
         adc data.sprite_char_ylsb,y
         pha
         lda data.sprite_char_xmsb,x
         adc data.sprite_char_ymsb,y
+        adc #>VIEW_SPRITES
         tay
         pla
         tax
+        stx $0402
+        sty $0403
         rts
 .pend
 
+
+
+bitmap_get_ptr .proc
+        lda data.bitmap_char_xlsb + 8,x
+        clc
+        adc data.bitmap_char_ylsb,y
+        pha
+        lda data.bitmap_char_xmsb + 8,x
+        adc data.bitmap_char_ymsb,y
+        adc #>VIEW_BITMAP
+        tay
+        pla
+        tax
+        stx $0400
+        sty $0401
+        rts
+.pend
 
 ; @brief        Render a single zoomed char
 ;
@@ -153,15 +171,58 @@ sprite_get_ptr .proc
 ; @param Y      y-pos in data
 ;
 render_char .proc
+
+        src = zp
+        tmp = zp + 2
+
+        ; store params
+        stx data.zoom_src_xchar
+        sty data.zoom_src_ychar
         pha
         and #$0f
-        sta data.zoom_xchar
+        sta data.zoom_dst_xchar
         pla
         lsr a
         lsr a
         lsr a
         lsr a
-        sta data.zoom_ychar
+        sta data.zoom_dst_ychar
+
+        ; retrieve source data
+
+        ; retrieve source bitmap data
+        ; x/y contain source X/Y
+        jsr bitmap_get_ptr
+        stx src + 0
+        sty src + 1
+        ldy #7
+-       lda (src),y
+        sta data.zoom_src_bitmap,y
+        dey
+        bpl -
+
+        ; retrieve source sprite layer data
+        ldx data.zoom_src_xchar
+        ldy data.zoom_src_ychar
+        jsr sprite_get_ptr
+        stx src + 0
+        sty src + 1
+
+        ldx #7
+        ldy #0
+-
+        lda data.sprite_char_ylsb,x
+        clc
+        adc src + 0
+        sta tmp + 0
+        lda data.sprite_char_ymsb,x
+        adc src + 1
+        sta tmp + 1
+
+        lda (tmp),y
+        sta data.zoom_src_sprite,x
+        dex
+        bpl -
 
         rts
 .pend
@@ -171,6 +232,8 @@ render_char .proc
 render_full .proc
 
         lda #$00
+        ldx #0
+        ldy #0
         jsr render_char
         rts
 .pend

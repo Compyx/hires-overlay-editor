@@ -43,8 +43,18 @@ dialog_extra     .word 0
 
 
 ; zoom data
-zoom_xchar      .byte 0
-zoom_ychar      .byte 0
+
+; Zoom destination
+zoom_dst_xchar  .byte 0
+zoom_dst_ychar  .byte 0
+
+; Zoom source data
+zoom_src_xchar  .byte 0
+zoom_src_ychar  .byte 0
+
+zoom_src_sprite .fill 8, 0
+zoom_src_bitmap .fill 8, 0
+
 
 
 ; Status data
@@ -118,4 +128,16 @@ sprite_char_ylsb
 ; sprite data row MSB
 sprite_char_ymsb
         .byte >fn_sprite_yoffset(range(63))
+
+bitmap_char_xlsb
+        .byte <(range(40) * 8)
+
+bitmap_char_xmsb
+        .byte >(range(40) * 8)
+
+bitmap_char_ylsb
+        .byte <(range(25) * $140)
+
+bitmap_char_ymsb
+        .byte >(range(25) * $140)
 

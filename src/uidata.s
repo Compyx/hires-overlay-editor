@@ -21,7 +21,7 @@ dialog_ptrs
 
 
 welcome_dlg
-        .byte ui.TYPE_INFO
+        .byte ui.TYPE_INFO|ui.RENDER_ZOOM
         .byte 30, 6
         .word welcome_title
         .word welcome_text
