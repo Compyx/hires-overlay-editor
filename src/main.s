@@ -29,7 +29,7 @@
 
         FONT_ADDR       = $3800
         FONT_SIZE       = $0400
-        FONT_NAME       = "font4.prg"
+        FONT_NAME       = "font5.prg"
 
 
         RASTER_UBORDER  = $00

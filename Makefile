@@ -19,7 +19,7 @@ LABELS = labels.txt
 SOURCES = src/main.s \
 	  src/data.s src/status.s src/view.s src/zoom.s src/ui.s src/uidata.s
 # External data files
-DATA = data/font4.prg
+DATA = data/font5.prg
 
 
 all: $(TARGET)
