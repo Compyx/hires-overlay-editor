@@ -3,3 +3,5 @@ labels.txt
 *.png
 hoe.prg
 build.log
+.exrc
+

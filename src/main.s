@@ -7,6 +7,49 @@
 
 
 ;------------------------------------------------------------------------------
+; Debug set up
+;------------------------------------------------------------------------------
+
+        .weak
+        DEBUG = false       ; Off by default
+        .endweak
+
+; Set DBG_BORDER constant
+;
+; Useful to disable border color changes in timing-critical code. If timing
+; isn't critical use the debug macros.
+;
+.if DEBUG
+        DBG_BORDER = $d020
+.else
+        DBG_BORDER = $d03f
+.endif
+
+
+.if DEBUG
+
+debug_sta .macro
+        sta \1
+.endm
+debug_stx .macro
+        stx \1
+.endm
+debug_sty .macro
+        sty \1
+.endm
+
+.else   ; .if DEBUG
+debug_sta .macro
+.endm
+debug_stx .macro
+.endm
+debug_sty .macro
+.endm
+
+.endif
+
+
+;------------------------------------------------------------------------------
 ; Global constants
 ;------------------------------------------------------------------------------
 
@@ -74,7 +117,6 @@ main
         lda #6
         sta $d020
         sta $d021
-
 
         ; only run once
         lda data.init_done
@@ -161,7 +203,7 @@ init .proc
 
 ; IRQ handler for the lower border opening code
 lborder_irq
-        dec $d020
+        dec DBG_BORDER
         lda #$13
         sta $d011
         ldx #$40
@@ -169,7 +211,7 @@ lborder_irq
         bpl -
         lda #$1b
         sta $d011
-        inc $d020
+        inc DBG_BORDER
 
         lda #<uborder_irq
         ldx #>uborder_irq
@@ -186,11 +228,11 @@ lborder_irq
 ; being mirrored in the upper border
 ;
 uborder_irq
-        dec $d020
+        dec DBG_BORDER
         lda #0
         sta $d015
         jsr set_sprites_color
-        inc $d020
+        inc DBG_BORDER
 
         lda #<view_irq1
         ldx #>view_irq1
@@ -205,7 +247,7 @@ do_irq
 
 ; IRQ handler to set up the view and its first sprite row
 view_irq1
-        dec $d020
+        dec DBG_BORDER
         lda #$ff
         sta $d015
         lda #$00
@@ -220,12 +262,13 @@ view_irq1
         lda #$3b
         sta $d011
         lda #d018calc(VIEW_VIDRAM, VIEW_BITMAP)
-        sta $0400
+        #debug_sta $0428
+
         sta $d018
         lda #$02
         sta $dd00
 
-        inc $d020
+        inc DBG_BORDER
 
         lda #<view_irq2
         ldx #>view_irq2
@@ -247,9 +290,9 @@ view_irq2
 
 ; IRQ handler to set up the third view row
 view_irq3
-        inc $d020
+        inc DBG_BORDER
         jsr set_sprite_layer_ypos3
-        dec $d020
+        dec DBG_BORDER
 
         lda #<status_irq
         ldx #>status_irq
@@ -260,7 +303,7 @@ view_irq3
 ; IRQ handler to set up the status bar between the view and the zoom
 ;
 status_irq
-        dec $d020
+        dec DBG_BORDER
         lda #$1b
         sta $d011
         lda #$1e
@@ -268,7 +311,7 @@ status_irq
         lda #$03
         sta $dd00
         jsr set_zoom_sprites
-        inc $d020
+        inc DBG_BORDER
 
         lda #<lborder_irq
         ldx #>lborder_irq
@@ -420,7 +463,7 @@ set_zoom_sprites .proc
         lda #0
         sta $d010
 
-        lda #$ff
+        lda #(ZOOM_SPRITE_PIXEL & $3fff) / 64
         sta $07f8
         lda data.pixelspritecol
         sta $d027

@@ -6,7 +6,8 @@
 ASM = 64tass
 # Assembler flags
 ASM_FLAGS = --ascii --case-sensitive --m6502 --vice-labels --labels $(LABELS) \
-	    -Wall -Wshadow -Wstrict-bool -I src
+	    -Wall -Wshadow -Wstrict-bool -I src \
+	    -DDEBUG=true
 
 
 # Target, raw .prg

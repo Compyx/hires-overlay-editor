@@ -130,6 +130,13 @@ init .proc
 
 
 
+; @brief        Get pointer to sprite layer 'char'
+;
+; @param X      column
+; @param Y      row
+;
+; @return       X = LB, Y = MSB
+;
 sprite_get_ptr .proc
         lda data.sprite_char_xlsb,x
         clc
@@ -141,28 +148,56 @@ sprite_get_ptr .proc
         tay
         pla
         tax
-        stx $0402
-        sty $0403
+        #debug_stx $0402
+        #debug_sty $0403
         rts
 .pend
 
 
-
+; @brief        Get pointer to bitmap
+;
+; @param X      column
+; @param Y      row
+;
+; @return       X = LSB, Y = MSB
+;
 bitmap_get_ptr .proc
-        lda data.bitmap_char_xlsb + 8,x
+        lda data.bitmap_char_xlsb + 8,x         ; TODO: use constant
         clc
         adc data.bitmap_char_ylsb,y
         pha
-        lda data.bitmap_char_xmsb + 8,x
+        lda data.bitmap_char_xmsb + 8,x         ; TODO: use constant
         adc data.bitmap_char_ymsb,y
         adc #>VIEW_BITMAP
         tay
         pla
         tax
-        stx $0400
-        sty $0401
+        #debug_stx $0400
+        #debug_sty $0401
         rts
 .pend
+
+
+; @brief        Get pointer to videoram
+;
+; @param X      column
+; @param Y      row
+;
+; @return       X = LSB, Y = MSB
+;
+vidram_get_ptr .proc
+        txa
+        clc
+        adc data.screen_row_lsb,y
+        pha
+        lda data.screen_row_msb,y
+        adc #>VIEW_VIDRAM
+        tay
+        pla
+        tax
+        rts
+.pend
+
 
 ; @brief        Render a single zoomed char
 ;
@@ -173,7 +208,8 @@ bitmap_get_ptr .proc
 render_char .proc
 
         src = zp
-        tmp = zp + 2
+        dst = zp + 2
+        tmp = zp + 4
 
         ; store params
         stx data.zoom_src_xchar
@@ -224,11 +260,60 @@ render_char .proc
         dex
         bpl -
 
+        ; get colors
+        lda data.zoom_src_xchar
+        clc
+        adc #8
+        tax
+        ldy data.zoom_src_ychar
+        jsr vidram_get_ptr
+        stx src + 0
+        sty src + 1
+        ldy #0
+        lda (src),y
+        pha
+        and #$0f
+        sta data.zoom_src_colors + 1
+        pla
+        lsr a
+        lsr a
+        lsr a
+        lsr a
+        sta data.zoom_src_colors + 2
+        lda data.overlaycolor
+        sta data.zoom_src_colors + 0
+
+        ; determine colram location of zoom
+        ldx data.zoom_dst_xchar
+        lda data.zoom_dst_ychar
+        clc
+        adc #9
+        tay
+        jsr vidram_get_ptr
+        stx dst + 0
+        tya
+        and #3
+        ora #$d8
+        sta dst + 1
+
+        #debug_stx $0404
+        #debug_sta $0405
+
+        ; now actually render the zoom
+        ldy #7
+        lda #$01
+-       sta (dst),y
+        dey
+        bpl -
+
         rts
 .pend
 
 
-
+; @brief        Render full zoom area
+;
+; @clobbers     all
+;
 render_full .proc
 
         lda #$00

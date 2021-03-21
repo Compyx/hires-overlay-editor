@@ -54,7 +54,7 @@ zoom_src_ychar  .byte 0
 
 zoom_src_sprite .fill 8, 0
 zoom_src_bitmap .fill 8, 0
-
+zoom_src_colors .fill 4, 0
 
 
 ; Status data
