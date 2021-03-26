@@ -96,4 +96,3 @@ init .proc
         jsr clear_idle_area
         rts
 .pend
-

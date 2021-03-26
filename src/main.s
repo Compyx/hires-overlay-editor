@@ -7,9 +7,71 @@
 
 
 ;------------------------------------------------------------------------------
+; Sections - Declare sections
+;------------------------------------------------------------------------------
+        * = $0801
+        .dsection basic
+
+        * = $0900
+        .dsection data
+
+        * = $1000
+        .dsection code
+
+        * = $3800
+        .dsection font
+        .cerror * > $3c00, "Font file too large!"
+
+        * = $3c00
+        .dsection sprites
+        .cerror * > $3fff, "Too many sprites!"
+
+;------------------------------------------------------------------------------
+; Collect data and code into sections
+;------------------------------------------------------------------------------
+
+
+; Shared data
+        .section data
+data    .binclude "data.s"
+        .send
+
+; Status bar code
+        .section code
+status  .binclude "status.s"
+        .send
+
+; View code
+        .section code
+view    .binclude "view.s"
+        .send
+
+; Zoom code
+        .section code
+zoom    .binclude "zoom.s"
+        .send
+
+; UI code
+        .section code
+ui      .binclude "ui.s"
+        .send
+
+; UI data
+        .section data
+uidata  .binclude "uidata.s"
+        .send
+
+; Font
+        .section font
+.binary format("../data/%s", FONT_NAME), 2, FONT_SIZE
+        .send
+
+
+;------------------------------------------------------------------------------
 ; Debug set up
 ;------------------------------------------------------------------------------
 
+; This symbol needs to be set when calling the assembler with -DDEBUG=true
         .weak
         DEBUG = false       ; Off by default
         .endweak
@@ -17,7 +79,7 @@
 ; Set DBG_BORDER constant
 ;
 ; Useful to disable border color changes in timing-critical code. If timing
-; isn't critical use the debug macros.
+; isn't critical use the debug macros #debug_sta, #debug_stx and #debug_sty.
 ;
 .if DEBUG
         DBG_BORDER = $d020
@@ -28,15 +90,23 @@
 
 .if DEBUG
 
+; @brief        Store A in \1 if DEBUG set
 debug_sta .macro
         sta \1
 .endm
+
+
+; @brief        Store X in \1 if DEBUG set
 debug_stx .macro
         stx \1
 .endm
+
+
+; @brief        Store Y in \1 if DEBUG set
 debug_sty .macro
         sty \1
 .endm
+
 
 .else   ; .if DEBUG
 debug_sta .macro
@@ -100,20 +170,19 @@ d018calc .sfunction vram, bmp, ((vram >> 6) & $f0) | ((bmp >> 10) & $f) | ((vram
 ;------------------------------------------------------------------------------
 ; BASIC SYS line
 ;------------------------------------------------------------------------------
-
-        * = $0801
-
+        .section basic
         .word (+), 2021
-        .null $9e, format("%d", main)
+        .null $9e, format("%d", init)
 +       .word(0)
+        .send
 
 
+        .section code
 ; Main entry point
 ;
 ; @clobbers     all
 ; @noreturn
-;
-main
+init
         lda #6
         sta $d020
         sta $d021
@@ -121,7 +190,7 @@ main
         ; only run once
         lda data.init_done
         bne init_skip
-        jsr init
+        jsr init_cold
         lda #1
         sta data.init_done
 init_skip
@@ -160,7 +229,7 @@ init_skip
 
 
 ; Cold start initialization
-init .proc
+init_cold .proc
 
         ; use BASIC ROM to store some garbage data in the sprite layer
         ldx #0
@@ -480,23 +549,6 @@ set_zoom_sprites .proc
 .pend
 
 
-;------------------------------------------------------------------------------
-; Namespaces
-;------------------------------------------------------------------------------
-
-; Shared data
-data    .binclude "data.s"
-; Status bar code
-status  .binclude "status.s"
-; View code
-view    .binclude "view.s"
-; Zoom code
-zoom    .binclude "zoom.s"
-; UI code
-ui      .binclude "ui.s"
-; UI data
-uidata  .binclude "uidata.s"
-
 
 ; @brief        Quick test of the UI window rendering
 test_window_render
@@ -504,32 +556,5 @@ test_window_render
         ldx #4
         ldy #4
         jsr ui.dialog_show
-
-;        jsr ui.window_set_pos
-;        ldx #30
-;        ldy #5
-;        jsr ui.window_set_size
-;        jsr ui.window_render_frame
-;
-;        ldx #<window_test_title
-;        ldy #>window_test_title
-;        jsr ui.window_render_title
-;
-;        ldx #<window_test_text
-;        ldy #>window_test_text
-;        jsr ui.window_render_text
-
         rts
-
-
-
-
-;------------------------------------------------------------------------------
-; Load external data such as sprites, font etc.
-;------------------------------------------------------------------------------
-
-; Font
-        * = FONT_ADDR
-
-.binary format("../data/%s", FONT_NAME), 2, FONT_SIZE
-
+.send

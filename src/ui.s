@@ -456,4 +456,3 @@ handler_anykey
         lda #0
         sta data.dialog_active
         rts
-

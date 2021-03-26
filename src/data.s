@@ -2,6 +2,7 @@
 ;
 ; Data section
 
+
 init_done       .byte 0         ; signal that the cold-start init was done
 
 ; View data
