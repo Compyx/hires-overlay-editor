@@ -210,6 +210,9 @@ render_char .proc
         src = zp
         dst = zp + 2
         tmp = zp + 4
+        color = zp + 6
+        column = zp + 7
+        row = zp + 8
 
         ; store params
         stx data.zoom_src_xchar
@@ -284,9 +287,16 @@ render_char .proc
         sta data.zoom_src_colors + 0
 
         ; determine colram location of zoom
-        ldx data.zoom_dst_xchar
+        lda data.zoom_dst_xchar
+        asl a
+        asl a
+        asl a
+        tax
         lda data.zoom_dst_ychar
         clc
+        asl a
+        asl a
+        asl a
         adc #9
         tay
         jsr vidram_get_ptr
@@ -299,12 +309,62 @@ render_char .proc
         #debug_stx $0404
         #debug_sta $0405
 
+        ;
         ; now actually render the zoom
-        ldy #7
-        lda #$01
--       sta (dst),y
-        dey
-        bpl -
+        ;
+        ; sprite layer has priority
+        ;
+        ldy #0
+        sty row
+more_row
+        ldx #0
+        stx column
+        ldy row
+more_pixel
+        ldy row
+        ldx column
+        ; check sprite layer
+        lda data.zoom_src_sprite,y
+        and data.pixel_bitmask,x
+        beq +
+        lda #0
+        sta color
+        jmp next_pixel
++
+        lda #1
+        sta color
+        lda data.zoom_src_bitmap,y
+        and data.pixel_bitmask,x
+        bne +
+        inc color
++
+next_pixel
+
+        ; plot current
+loadcolor
+        ldx color
+        ldy column
+        lda data.zoom_src_colors,x
+        sta (dst),y
+
+        inc column
+        lda column
+        cmp #$8
+        bne more_pixel
+
+        ; add row
+        lda dst
+        clc
+        adc #40
+        sta dst
+        bcc +
+        inc dst +1
++
+
+        inc row
+        lda row
+        cmp #$08
+        bne more_row
 
         rts
 .pend
@@ -316,9 +376,57 @@ render_char .proc
 ;
 render_full .proc
 
+        jsr clear
+
         lda #$00
         ldx #0
         ldy #0
         jsr render_char
+
+        lda #$01
+        ldx #1
+        ldy #0
+        jsr render_char
+
+        lda #$02
+        ldx #2
+        ldy #0
+        jsr render_char
+
+        lda #$03
+        ldx #3
+        ldy #0
+        jsr render_char
+
+        lda #$04
+        ldx #4
+        ldy #0
+        jsr render_char
+
+        lda #$10
+        ldx #0
+        ldy #1
+        jsr render_char
+
+        lda #$11
+        ldx #1
+        ldy #1
+        jsr render_char
+
+        lda #$12
+        ldx #2
+        ldy #1
+        jsr render_char
+
+        lda #$13
+        ldx #3
+        ldy #1
+        jsr render_char
+
+        lda #$14
+        ldx #4
+        ldy #1
+        jsr render_char
+
         rts
 .pend

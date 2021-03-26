@@ -229,8 +229,11 @@ lborder_irq
 ;
 uborder_irq
         dec DBG_BORDER
-        lda #0
+        lda #$00
         sta $d015
+        lda #$3b
+        sta $d011
+
         jsr set_sprites_color
         inc DBG_BORDER
 
@@ -259,9 +262,8 @@ view_irq1
         jsr set_sprite_layer_xpos
         jsr set_sprite_layer_ypos1
 
-        lda #$3b
-        sta $d011
         lda #d018calc(VIEW_VIDRAM, VIEW_BITMAP)
+        
         #debug_sta $0428
 
         sta $d018

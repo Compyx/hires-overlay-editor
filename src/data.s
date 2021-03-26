@@ -141,3 +141,5 @@ bitmap_char_ylsb
 bitmap_char_ymsb
         .byte >(range(25) * $140)
 
+pixel_bitmask
+        .byte $80, $40, $20, $10, $08, $04, $02, $01
