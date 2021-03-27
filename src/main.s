@@ -63,7 +63,30 @@ uidata  .binclude "uidata.s"
 
 ; Font
         .section font
-.binary format("../data/%s", FONT_NAME), 2, FONT_SIZE
+        .binary format("../data/%s", FONT_NAME), 2, FONT_SIZE
+        .send
+
+; Sprites
+        .section sprites
+
+zoom_sprite_topleft_mem
+        .binary format("../data/%s", ZOOM_SPRITE_TOPLEFT_NAME), 2
+
+        .align 64
+zoom_sprite_topright_mem
+        .binary format("../data/%s", ZOOM_SPRITE_TOPRIGHT_NAME), 2
+
+        .align 64
+zoom_sprite_bottomleft_mem
+        .binary format("../data/%s", ZOOM_SPRITE_BOTTOMLEFT_NAME), 2
+
+        .align 64
+zoom_sprite_bottomright_mem
+        .binary format("../data/%s", ZOOM_SPRITE_BOTTOMRIGHT_NAME), 2
+
+        .align 64
+zoom_sprite_pixel_mem
+        .binary format("../data/%s", ZOOM_SPRITE_PIXEL_NAME), 2
         .send
 
 
@@ -149,7 +172,11 @@ assert_zp .macro
         ZOOM_ROWS       = 16
         ZOOM_POINTERS   = $07f8
 
-        ZOOM_SPRITE_PIXEL = $3fc0
+        ZOOM_SPRITE_PIXEL_NAME = "zoom-sprite-pixel.prg"
+        ZOOM_SPRITE_TOPLEFT_NAME = "zoom-sprite-topleft.prg"
+        ZOOM_SPRITE_TOPRIGHT_NAME = "zoom-sprite-topright.prg"
+        ZOOM_SPRITE_BOTTOMLEFT_NAME = "zoom-sprite-bottomleft.prg"
+        ZOOM_SPRITE_BOTTOMRIGHT_NAME = "zoom-sprite-bottomright.prg"
 
         FONT_ADDR       = $3800
         FONT_SIZE       = $0400
@@ -160,7 +187,7 @@ assert_zp .macro
         RASTER_VIEW1    = $2e
         RASTER_VIEW2    = $33 + 20
         RASTER_VIEW3    = $33 + 20 + 21
-        RASTER_STATUS   = $72
+        RASTER_STATUS   = $71
         RASTER_LBORDER  = $f9
 
 
@@ -176,7 +203,11 @@ assert_zp .macro
 d018calc .sfunction vram, bmp, ((vram >> 6) & $f0) | ((bmp >> 10) & $f) | ((vram ^ bmp) & ~$3fff)
 
 
-
+; @brief        Calculate sprite pointer value based on \a mem
+;
+; @return       sprite pointer value
+;
+sprite_pointer_calc .sfunction mem, ((mem & $3fff) / 64)
 
 ;------------------------------------------------------------------------------
 ; BASIC SYS line
@@ -291,6 +322,7 @@ lborder_irq
         bpl -
         lda #$1b
         sta $d011
+        jsr flash_zoom_square
         inc DBG_BORDER
 
         lda #<uborder_irq
@@ -343,9 +375,7 @@ view_irq1
         jsr set_sprite_layer_ypos1
 
         lda #d018calc(VIEW_VIDRAM, VIEW_BITMAP)
-        
         #debug_sta $0428
-
         sta $d018
         lda #$02
         sta $dd00
@@ -539,13 +569,13 @@ set_zoom_sprites .proc
         lda #$00
         ldx data.dialog_active
         bne +
-        lda #$01
+        lda #(1<<5) - 1
 +       sta $d015
 
         lda #0
         sta $d010
 
-        lda #(ZOOM_SPRITE_PIXEL & $3fff) / 64
+        lda #(zoom_sprite_pixel_mem & $3fff) / 64
         sta $07f8
         lda data.pixelspritecol
         sta $d027
@@ -556,6 +586,37 @@ set_zoom_sprites .proc
         lda $d010
         ora data.pixelspritexmsb
         sta $d010
+
+        lda #$18
+        sta $d002
+        sta $d006
+        lda #$3f
+        sta $d004
+        sta $d008
+
+        lda #$32 + 9 * 8
+        sta $d003
+        sta $d005
+        lda #$33 + 9 * 8 + 64 - 22
+        sta $d007
+        sta $d009
+
+        lda zoom_square_color
+        sta $d028
+        sta $d029
+        sta $d02a
+        sta $d02b
+
+        lda #sprite_pointer_calc(zoom_sprite_topleft_mem)
+        sta $07f9
+        lda #sprite_pointer_calc(zoom_sprite_topright_mem)
+        sta $07fa
+        lda #sprite_pointer_calc(zoom_sprite_bottomleft_mem)
+        sta $07fb
+        lda #sprite_pointer_calc(zoom_sprite_bottomright_mem)
+        sta $07fc
+
+
         rts
 .pend
 
@@ -569,3 +630,36 @@ test_window_render
         jsr ui.dialog_show
         rts
 .send
+
+
+; FIXME: cannot poke the operand of LDA since the code poking the sprite data
+;        is inside a .proc block
+;
+zoom_square_color .byte $07
+
+flash_colors
+        .byte 0, 6, 2, 8 ,4 ,10, 15, 7, 1, 13, 3 ,15, 12, 8, 11, 9, 0, $ff
+
+
+flash_zoom_square .proc
+
+        DELAY_VAL = 3
+
+delay   lda #DELAY_VAL
+        beq +
+        dec delay + 1
+        rts
++       lda #DELAY_VAL
+        sta delay + 1
+
+index   ldx #0
+        lda flash_colors,x
+        bpl +
+        ldx #0
+        stx index + 1
+        lda flash_colors,x
++
+        sta zoom_square_color
+        inc index + 1
+        rts
+.pend

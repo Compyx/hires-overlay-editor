@@ -98,26 +98,6 @@ more
 
 
 
-; @brief        Create sprites for the zoom area
-;
-; @todo         Once the sprites are settled, export as .prg/.bin and import
-create_sprites .proc
-        ; create pixel zoom sprite
-        ldx #0
--       lda data.pixel_sprite_data,x
-        sta ZOOM_SPRITE_PIXEL,x
-        inx
-        cpx #data.pixel_sprite_data_end - data.pixel_sprite_data
-        bne -
-        lda #0
--       sta ZOOM_SPRITE_PIXEL,x
-        inx
-        cpx #$3f
-        bne -
-        rts
-.pend
-
-
 ; @brief        Initialize zoom module
 ;
 ; Renders initial zoom area and sets up sprites.
@@ -125,7 +105,6 @@ create_sprites .proc
 ; @clobbers     all
 init .proc
         jsr clear
-        jsr create_sprites
         rts
 .pend
 
