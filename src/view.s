@@ -14,6 +14,7 @@ clear_idle_area .proc
         vidramcolor = zp + 2
         bitmap_left = zp + 3
         bitmap_right= zp + 5
+        #assert_zp bitmap_right + 1
 
         lda #<VIEW_VIDRAM
         ldx #>VIEW_VIDRAM

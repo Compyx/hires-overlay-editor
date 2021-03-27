@@ -119,11 +119,22 @@ debug_sty .macro
 .endif
 
 
+; @brief        Assert use of temp ZP against 'normal' ZP
+; @param \1     ZP address to check agains `zp_tmp`
+;
+assert_zp .macro
+        .cerror \1 > zp_tmp, format("`zp` $%02x overlaps `zp_tmp` at $%02x", \1, zp_tmp)
+.endm
+
+
 ;------------------------------------------------------------------------------
 ; Global constants
 ;------------------------------------------------------------------------------
 
+        ZP_COUNT = 8
+
         zp = $10
+        zp_tmp = zp + ZP_COUNT
 
         VIEW_BITMAP     = $4000
         VIEW_ROWS       = 8

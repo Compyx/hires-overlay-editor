@@ -92,6 +92,7 @@ window_render_frame .proc
 
         vidram = zp
         colram = zp + 2
+        #assert_zp colram + 1
 
         ldx data.window_xpos
         ldy data.window_ypos
@@ -194,6 +195,8 @@ window_render_title .proc
         vidram = zp
         colram = zp + 2
         title = zp + 4
+        #assert_zp title + 1
+
 
         stx title + 0
         sty title + 1
@@ -250,6 +253,7 @@ window_render_text .proc
         source = zp + 4
         column = zp + 6
         color  = zp + 7
+        #assert_zp color
 
         stx source + 0
         sty source + 1
@@ -329,6 +333,7 @@ more_cr
 dialog_show .proc
 
         dialog = zp
+        #assert_zp dialog + 1
 
         sta data.dialog_index
         stx data.dialog_xpos

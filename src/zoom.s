@@ -16,6 +16,7 @@ clear .proc
 
         vidram = zp
         row  = zp + 2
+        #assert_zp row
 
         ldx #0
 -       lda #$40
@@ -213,6 +214,7 @@ render_char .proc
         color = zp + 6
         column = zp + 7
         row = zp + 8
+        #assert_zp row
 
         ; store params
         stx data.zoom_src_xchar
