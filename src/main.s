@@ -632,6 +632,7 @@ test_window_render
 .send
 
 
+        .section data
 ; FIXME: cannot poke the operand of LDA since the code poking the sprite data
 ;        is inside a .proc block
 ;
@@ -639,7 +640,7 @@ zoom_square_color .byte $07
 
 flash_colors
         .byte 0, 6, 2, 8 ,4 ,10, 15, 7, 1, 13, 3 ,15, 12, 8, 11, 9, 0, $ff
-
+        .send
 
 flash_zoom_square .proc
 
